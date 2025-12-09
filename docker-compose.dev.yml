@@ -1,0 +1,64 @@
+version: '3.8'
+
+# Development docker-compose with hot reload
+# Use this for local development
+
+services:
+  storage-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: soundcapsule-storage-dev
+    ports:
+      - "4002:4002"
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      PORT: 4002
+      DATABASE_URL: mysql://soundcapsule:soundcapsule_password@mysql:3306/soundcapsule_storage
+      JWKS_URI: https://auth.soundcapsule.com/.well-known/jwks.json
+      JWT_ISSUER: https://auth.soundcapsule.com
+      JWT_AUDIENCE: soundcapsule
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      UPLOAD_URL_EXPIRES_IN: 900
+      MAX_PLAYBACK_HOURS: 168
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - soundcapsule
+    command: npm run start:dev
+
+  mysql:
+    image: mysql:8.0
+    container_name: soundcapsule-storage-db-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: soundcapsule_storage
+      MYSQL_USER: soundcapsule
+      MYSQL_PASSWORD: soundcapsule_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    networks:
+      - soundcapsule
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_dev_data:
+
+networks:
+  soundcapsule:
+    driver: bridge

@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model FileAudit {
+  id              String   @id @default(uuid())
+  userId          String   @db.VarChar(255)
+  fileKey         String   @db.VarChar(255)
+  action          String   @db.VarChar(50) // "upload_url_requested", "playback_url_requested"
+  fileName        String?  @db.VarChar(500)
+  contentType     String?  @db.VarChar(100)
+  durationSeconds Int?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  
+  @@index([userId])
+  @@index([fileKey])
+  @@index([createdAt])
+  @@map("file_audits")
+}
